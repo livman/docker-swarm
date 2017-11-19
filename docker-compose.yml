@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+
+  lb:
+    image: nginx
+    volumes:
+      - "./loadbalancer:/etc/nginx/conf.d"
+    ports:
+      - "80:80"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - lbnet
+
+  web:
+    image: php:7.0-apache
+    deploy:
+      replicas: 5
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 50M
+    volumes:
+      - "./html:/var/www/html"
+    ports:
+      - "8080:80"
+    networks:
+      - lbnet
+
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8888:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - lbnet
+
+
+networks:
+  lbnet:
